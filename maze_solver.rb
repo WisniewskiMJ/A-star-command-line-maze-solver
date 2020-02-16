@@ -46,20 +46,22 @@ class Solver
   end
 
   def draw_path
-    debugger
-    i = 0 
-    while i < 4
-      # @maze[@current_node.parent_coords[0]][@current_node.parent_coords[1]] = "X"
-      self.backtrack_current
-      i += 1
+    # debugger
+    target = @current_node.parent_coords
+    p target
+    while target != @start.coords
+      @maze[target[0]][target[1]] = "X"
+      target = self.backtrack_current(target)
     end
   end
 
-  def backtrack_current
-    parent =  @closed_list.select do |n|
-      n.coords == @current_node.parent_coords
+  def backtrack_current(target)
+    @closed_list.each do |n|
+      if  n.coords == target
+        target = n.parent_coords 
+      end
     end
-    @current_node = parent
+    target
   end
 
 
