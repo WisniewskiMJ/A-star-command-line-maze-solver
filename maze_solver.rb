@@ -24,8 +24,8 @@ class Solver
     self.search
     # draw path
     self.draw_path
-    puts "open - #{@open_list.length}"
-    puts "closed - #{@closed_list.length}"
+    puts "closed = #{@closed_list.length}"
+    puts "open = #{@open_list.length}"
     self.p_maze
   end
 
@@ -48,11 +48,13 @@ class Solver
   def draw_path
     # debugger
     target = @current_node.parent_coords
-    p target
+    count = 0
     while target != @start.coords
+      count +=1
       @maze[target[0]][target[1]] = "X"
       target = self.backtrack_current(target)
     end
+    puts "length = #{count}"
   end
 
   def backtrack_current(target)
@@ -80,40 +82,38 @@ class Solver
 
 
   def check_adjacent
-    adjacent = self.get_nodes
-    adjacent.each do |node|
-      if valid_step?(node.coords)
-        if @open_list.none? {|n| n.coords == node.coords}
-          @open_list << node 
+    adjacent_coords = get_adjacent_coords(@current_node)
+    adjacent_coords.each do |coords|
+      if valid_step?(coords)
+        if @open_list.none? {|n| n.coords == coords}
+          @open_list << make_node(coords)
         else
-          self.parent_switch(node)
+          parent_switch(coords)
         end
       end
     end
   end
 
-  def get_nodes
+  def get_adjacent_coords(node)
     coords_arr = []
     (-1..1).each do |i|
       (-1..1).each do |j|
-        coords_arr << [@current_node.coords[0] + i, @current_node.coords[1] + j] if !(i == 0 && j == 0)
+        coords_arr << [node.coords[0] + i, node.coords[1] + j] if !(i == 0 && j == 0)
       end
     end
-    # p coords_arr
-    # p @current_node
-    nodes = []
-    coords_arr.each do |coords|
-      nodes << Node.new(coords, @current_node, heuristic(coords))
-    end
-    # puts nodes
-    nodes
+    coords_arr
   end
 
-  def parent_switch(node)
-    # if node.step_score > node.get_step(@current_score.coords, @current_score.step_score)
-    #   node.parent_coords = @current_node.coords
-    #   node.parent_step_score = @current_node.step_score
-    # end
+  def make_node(coords)
+    node = Node.new(coords, @current_node, heuristic(coords))
+  end
+
+  def parent_switch(coords)
+    node = @open_list.select {|n| n.coords == coords}.first
+    if node.get_step(@current_node.coords, @current_node.step_score) < node.step_score
+      node.parent_coords = @current_node.coords
+      node.parent_step_score = @current_node.step_score
+    end
   end
 
   def valid_step?(pos)
@@ -132,9 +132,9 @@ class Solver
 
   def get_maze
     maze = []
-    # maze_file = gets.chomp
-    #File.open(maze_file).each_line.with_index do |l, i|
-    File.open('m.txt').each_line.with_index do |l, i|
+    maze_file = gets.chomp
+    File.open(maze_file).each_line.with_index do |l, i|
+    # File.open('m.txt').each_line.with_index do |l, i|
       # maze << []
       maze << l.chomp.split("")
     end

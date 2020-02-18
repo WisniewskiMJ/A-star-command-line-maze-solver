@@ -1,6 +1,7 @@
 class Node
 
-  attr_reader :final_score, :coords, :step_score, :parent_coords
+  attr_reader :final_score, :coords, :step_score
+  attr_accessor :parent_coords, :parent_step_score
   
   def initialize(coordinates, parent, h_score)
     @coords = coordinates
@@ -16,7 +17,7 @@ class Node
     parent.coords
   end
 
-  def get_score(parent)
+  def get_score(parent)   
     return nil if parent == nil
     parent.step_score
   end
