@@ -5,11 +5,11 @@ class Node
   
   def initialize(coordinates, parent, h_score)
     @coords = coordinates
-    @parent_coords = self.get_coords(parent)
-    @parent_step_score = self.get_score(parent)
-    @step_score = self.get_step(@parent_coords, @parent_step_score)
+    @parent_coords = get_coords(parent)
+    @parent_step_score = get_score(parent)
+    @step_score = get_step(@parent_coords, @parent_step_score)
     @heuristic_score = h_score
-    @final_score = self.get_final
+    @final_score = get_final
   end
 
   def get_coords(parent)

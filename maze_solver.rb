@@ -3,90 +3,78 @@ require_relative 'node'
 
 class Solver
 
-  attr_reader :maze
-
   def initialize
-    @maze = self.get_maze
-    @start = Node.new(self.start_coords, nil, heuristic(self.start_coords))
-    @open_list = []
-    @closed_list = []
-    @current_node = self.set_current
+    @maze = get_maze_from_file
+    @starting_node = Node.new(start_coords, nil, heuristic(start_coords))
+    @nodes_to_check = []
+    @nodes_checked = []
+    @current_node = set_current_node
   end
   
 
   def run
-    # debugger
-    #print maze
-    self.p_maze
-    #add starting point to open list
-    @open_list << @start
-    # perform search loop
-    self.search
-    # draw path
-    self.draw_path
-    puts "closed = #{@closed_list.length}"
-    puts "open = #{@open_list.length}"
-    self.p_maze
+    print_maze
+    @nodes_to_check << @starting_node
+    search_path
+    draw_path
+    print_maze
   end
 
 
-  def search
-    if @closed_list.length == 0 
-      self.set_current
-      self.move_current
+  def search_path
+    if @nodes_checked.length == 0 
+      set_current_node
+      move_current_to_checked
     end
-    while @closed_list.none? {|n| n.coords == self.finish_coords}
-      #check nodes adjacent to current node
-      self.check_adjacent
-      #set current node (least costly)
-      self.set_current
-      #move current node to closed list
-      self.move_current
+    while @nodes_checked.none? {|n| n.coords == finish_coords}
+      check_nodes_adjacent_to_current
+      set_current_node
+      move_current_to_checked
     end
   end
 
   def draw_path
-    # debugger
-    target = @current_node.parent_coords
-    count = 0
-    while target != @start.coords
-      count +=1
-      @maze[target[0]][target[1]] = "X"
-      target = self.backtrack_current(target)
+    previous_node_coords = @current_node.parent_coords
+    step_count = 0
+    while previous_node_coords != @starting_node.coords
+      step_count += 1
+      @maze[previous_node_coords[0]][previous_node_coords[1]] = "X"
+      previous_node_coords = backtrack_path(previous_node_coords)
     end
-    puts "length = #{count}"
+    puts
+    puts "Path length = #{step_count}"
   end
 
-  def backtrack_current(target)
-    @closed_list.each do |n|
-      if  n.coords == target
-        target = n.parent_coords 
+  def backtrack_path(previous_node_coords)
+    @nodes_checked.each do |n|
+      if  n.coords == previous_node_coords
+        previous_node_coords = n.parent_coords 
       end
     end
-    target
+    previous_node_coords
   end
 
 
-  def set_current
-    current = @open_list[0]
-    @open_list.each do |node|
+  def set_current_node
+    current = @nodes_to_check.first
+    @nodes_to_check.each do |node|
       current = node if node.final_score <= current.final_score
     end
     @current_node = current
   end
 
 
-  def move_current
-    @closed_list.push(@open_list.delete(@current_node)) if @open_list.length > 0
+  def move_current_to_checked
+    @nodes_checked.push(@nodes_to_check.delete(@current_node)) if @nodes_to_check.length > 0
   end
 
 
-  def check_adjacent
+  def check_nodes_adjacent_to_current
     adjacent_coords = get_adjacent_coords(@current_node)
     adjacent_coords.each do |coords|
       if valid_step?(coords)
-        if @open_list.none? {|n| n.coords == coords}
-          @open_list << make_node(coords)
+        if @nodes_to_check.none? {|n| n.coords == coords}
+          @nodes_to_check << make_node(coords)
         else
           parent_switch(coords)
         end
@@ -109,7 +97,7 @@ class Solver
   end
 
   def parent_switch(coords)
-    node = @open_list.select {|n| n.coords == coords}.first
+    node = @nodes_to_check.select {|n| n.coords == coords}.first
     if node.get_step(@current_node.coords, @current_node.step_score) < node.step_score
       node.parent_coords = @current_node.coords
       node.parent_step_score = @current_node.step_score
@@ -117,11 +105,8 @@ class Solver
   end
 
   def valid_step?(pos)
-    #valid coordinates (but there if a wall around the maze)
-    #clean path
     return false if @maze[pos[0]][pos[1]] !=  " " &&  @maze[pos[0]][pos[1]] != "E" 
-    #no other node
-    @closed_list.each do |n|
+    @nodes_checked.each do |n|
       if n.coords == pos
         return false
       end
@@ -130,12 +115,11 @@ class Solver
   end
 
 
-  def get_maze
+  def get_maze_from_file
+    puts "Enter maze file name: "
     maze = []
     maze_file = gets.chomp
     File.open(maze_file).each_line.with_index do |l, i|
-    # File.open('m.txt').each_line.with_index do |l, i|
-      # maze << []
       maze << l.chomp.split("")
     end
     maze
@@ -170,17 +154,17 @@ class Solver
   end
 
 
-  def heuristic(first)
-    last = self.finish_coords
-    xs = [first[0], last[0]].sort!
-    x = xs[1] - xs[0]
-    ys = [first[1], last[1]].sort!
-    y = ys[1] - ys[0]      
-    (x + y - 1) * 10
+  def heuristic(coords)
+    target = finish_coords
+    x_coords = [coords[0], target[0]].sort
+    x_distance = x_coords[1] - x_coords[0]
+    y_coords = [coords[1], target[1]].sort
+    y_distance = y_coords[1] - y_coords[0]      
+    (x_distance + y_distance - 1) * 10
   end
 
 
-  def p_maze
+  def print_maze
     @maze.each_with_index {|l, i| puts @maze[i].join("")}
   end
 
