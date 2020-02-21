@@ -9,11 +9,13 @@ class Solver
     @nodes_to_check = []
     @nodes_checked = []
     @current_node = set_current_node
+    @corner_cutting = true
   end
   
 
   def run
     print_maze
+    ask_corner_cutting
     @nodes_to_check << @starting_node
     search_path
     draw_path
@@ -33,6 +35,7 @@ class Solver
     end
   end
 
+
   def draw_path
     previous_node_coords = @current_node.parent_coords
     step_count = 0
@@ -44,6 +47,7 @@ class Solver
     puts
     puts "Path length = #{step_count}"
   end
+
 
   def backtrack_path(previous_node_coords)
     @nodes_checked.each do |n|
@@ -82,6 +86,7 @@ class Solver
     end
   end
 
+
   def get_adjacent_coords(node)
     coords_arr = []
     (-1..1).each do |i|
@@ -92,9 +97,11 @@ class Solver
     coords_arr
   end
 
+
   def make_node(coords)
     node = Node.new(coords, @current_node, heuristic(coords))
   end
+
 
   def parent_switch(coords)
     node = @nodes_to_check.select {|n| n.coords == coords}.first
@@ -104,10 +111,14 @@ class Solver
     end
   end
 
-  def valid_step?(pos)
-    return false if @maze[pos[0]][pos[1]] !=  " " &&  @maze[pos[0]][pos[1]] != "E" 
+
+  def valid_step?(coords)
+    return false if @maze[coords[0]][coords[1]] !=  " " &&  @maze[coords[0]][coords[1]] != "E" 
+    if !@corner_cutting
+      return false if cutting_corner?(coords)
+    end
     @nodes_checked.each do |n|
-      if n.coords == pos
+      if n.coords == coords
         return false
       end
     end
@@ -115,10 +126,52 @@ class Solver
   end
 
 
+  def ask_corner_cutting
+    choice = nil
+    puts "Choose path around corners(a) or cutting(c):"
+    choice = gets.chomp
+    if choice == "a"
+      @corner_cutting = false
+    elsif choice != "c"
+      ask_corner_cutting
+    end
+  end
+
+
+  def cutting_corner?(coords)
+    position = @current_node.coords
+    if @maze[position[0]-1][position[1]] != " " && @maze[position[0]-1][position[1]] != "E"
+      if coords[0] == position[0]-1 && (coords[1] == position[1]-1 || coords[1] == position[1]+1)
+        return true
+      end
+    end
+    if @maze[position[0]+1][position[1]] != " " && @maze[position[0]+1][position[1]] != "E"
+      if coords[0] == position[0]+1 && (coords[1] == position[1]-1 || coords[1] == position[1]+1)
+        return true
+      end
+    end
+    if @maze[position[0]][position[1]-1] != " " && @maze[position[0]][position[1]-1] != "E"
+      if (coords[0] == position[0]-1 || coords[0] == position[0]+1) && coords[1] == position[1]-1
+        return true
+      end
+    end
+    if @maze[position[0]][position[1]+1] != " " && @maze[position[0]][position[1]+1] != "E"
+      if (coords[0] == position[0]-1 || coords[0] == position[0]+1) && coords[1] == position[1]+1
+        return true
+      end
+    end
+    false
+  end
+
+
   def get_maze_from_file
-    puts "Enter maze file name: "
+    puts "Available maze files:"
+    puts Dir.glob("*.txt")
+    puts
+    puts "Enter file name: "
     maze = []
     maze_file = gets.chomp
+    puts
     File.open(maze_file).each_line.with_index do |l, i|
       maze << l.chomp.split("")
     end
