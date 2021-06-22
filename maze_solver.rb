@@ -127,8 +127,8 @@ class Solver
 
 
   def ask_corner_cutting
-    choice = nil
     puts "Choose path around corners(a) or cutting(c):"
+    choice = nil
     choice = gets.chomp
     if choice == "a"
       @corner_cutting = false
