@@ -11,5 +11,5 @@ git clone https://github.com/WisniewskiMJ/A_star_cli_maze_solver
 ```
 Next cd into the game root directory and run:
 ```
-./bin/start
+./start
 ```
